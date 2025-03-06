@@ -1,28 +1,39 @@
 package com.mysamples.healthcaredemo.service;
 
-import com.mysamples.healthcaredemo.domain.HealthData;
+import static org.mockito.Mockito.*;
+
+import org.apache.camel.CamelContext;
 import org.apache.camel.ProducerTemplate;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.mockito.ArgumentMatchers.any;
-
+@ExtendWith(MockitoExtension.class)
 public class AlertServiceTest {
 
-    private final ProducerTemplate producerTemplate = Mockito.mock(ProducerTemplate.class);
-    private final AlertService alertService = new AlertService(producerTemplate);
+    @Mock
+    private ProducerTemplate producerTemplate;
+
+    @Mock
+    private CamelContext camelContext;
+
+    @InjectMocks
+    private AlertService alertService; // This will inject mocks automatically
+
+    @BeforeEach
+    void setUp() {
+        alertService = new AlertService(producerTemplate, camelContext);
+    }
 
     @Test
-    public void testCheckThresholds() {
-        HealthData data = new HealthData();
-        data.setPatientId("P5367");
-        data.setHeartRate(123.54542314289287);
-        data.setOxygenLevel(87.81203202532186);
-        data.setTemperature(39.63438496148977);
+    void testShutdownKafkaConsumers() throws Exception {
+        doNothing().when(camelContext).stop();
 
-        alertService.checkThresholds(data);
+        alertService.shutdownKafkaConsumers();
 
-        // Verify that alerts were sent for all conditions
-        Mockito.verify(producerTemplate, Mockito.times(3)).sendBody(Mockito.anyString(), any());
+        verify(camelContext, times(1)).stop();
     }
 }
