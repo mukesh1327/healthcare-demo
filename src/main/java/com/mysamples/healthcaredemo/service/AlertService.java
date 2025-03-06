@@ -1,21 +1,28 @@
 package com.mysamples.healthcaredemo.service;
 
-
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.ProducerTemplate;
 import org.springframework.stereotype.Service;
-
 import com.mysamples.healthcaredemo.domain.Alert;
 import com.mysamples.healthcaredemo.domain.HealthData;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AlertService {
 
-    private final ProducerTemplate producerTemplate;
-    private final HealthDataService healthDataService;
+    private final ProducerTemplate producerTemplate;  // Ensure this is used
+    private final List<Alert> generatedAlerts = new ArrayList<>();
+
+    public void addAlert(Alert alert) {
+        generatedAlerts.add(alert);
+        log.info("Stored Alert: {}", alert);
+    }
 
     public void checkThresholds(HealthData data) {
         if (data.getHeartRate() < 50 || data.getHeartRate() > 120) {
@@ -38,10 +45,15 @@ public class AlertService {
         alert.setMessage(message);
         alert.setTimestamp(Instant.now().toEpochMilli());
 
-        // Store alert for API response
-        healthDataService.addAlert(alert);
+        // Store alert in memory for API response
+        generatedAlerts.add(alert);
+        log.info("Generated Alert: {}", alert);
 
         // Send alert to Kafka
         producerTemplate.sendBody("direct:sendAlert", alert);
+    }
+
+    public List<Alert> getAllGeneratedAlerts() {
+        return generatedAlerts;
     }
 }

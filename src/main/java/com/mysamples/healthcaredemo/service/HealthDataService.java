@@ -1,28 +1,26 @@
 package com.mysamples.healthcaredemo.service;
 
-import lombok.Getter;
+import com.mysamples.healthcaredemo.domain.HealthData;
+import com.mysamples.healthcaredemo.repository.HealthDataRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import com.mysamples.healthcaredemo.domain.Alert;
-import com.mysamples.healthcaredemo.domain.HealthData;
-
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class HealthDataService {
 
-    @Getter
-    private final List<HealthData> consumedHealthData = new ArrayList<>();
-
-    @Getter
-    private final List<Alert> generatedAlerts = new ArrayList<>();
+    private final HealthDataRepository healthDataRepository;
 
     public void addHealthData(HealthData data) {
-        consumedHealthData.add(data);
+        log.info("Saving Health Data to Database: {}", data);
+        healthDataRepository.save(data);
     }
 
-    public void addAlert(Alert alert) {
-        generatedAlerts.add(alert);
+    public List<HealthData> getAllHealthData() {
+        return healthDataRepository.findAll();
     }
 }

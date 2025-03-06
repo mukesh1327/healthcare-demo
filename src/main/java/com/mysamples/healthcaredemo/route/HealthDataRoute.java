@@ -1,51 +1,55 @@
 package com.mysamples.healthcaredemo.route;
 
-
 import lombok.RequiredArgsConstructor;
 import org.apache.camel.builder.RouteBuilder;
 import org.springframework.stereotype.Component;
 
 import com.mysamples.healthcaredemo.config.KafkaConfig;
+import com.mysamples.healthcaredemo.domain.Alert;
 import com.mysamples.healthcaredemo.domain.HealthData;
 import com.mysamples.healthcaredemo.service.AlertService;
-import com.mysamples.healthcaredemo.service.AnalyticsService;
 import com.mysamples.healthcaredemo.service.HealthDataService;
 
 @Component
 @RequiredArgsConstructor
 public class HealthDataRoute extends RouteBuilder {
-
+    private final KafkaConfig kafkaConfig;
     private final AlertService alertService;
-    private final AnalyticsService analyticsService;
     private final HealthDataService healthDataService;
 
     @Override
     public void configure() {
 
-        // Consume IoT health data from Kafka
-        from("kafka:" + KafkaConfig.HEALTH_DATA_TOPIC + "?brokers=localhost:9092&groupId=healthcare-group")
+        // Consume health data from Kafka, store it in DB, and generate alerts
+        from("kafka:" + KafkaConfig.HEALTH_DATA_TOPIC + "?brokers=" + kafkaConfig.getKafkaBroker() + "&groupId=healthcare-group")
             .routeId("HealthDataRoute")
             .unmarshal().json(HealthData.class)
             .log("Received health data: ${body}")
             .process(exchange -> {
                 HealthData data = exchange.getIn().getBody(HealthData.class);
 
-                // Store consumed data for API response
+                // Store data in PostgreSQL
                 healthDataService.addHealthData(data);
 
-                // Check thresholds and generate alerts
+                // Check thresholds & generate alerts
                 alertService.checkThresholds(data);
-
-                // Send data to analytics system
-                analyticsService.processData(data);
             });
 
         // Produce alerts to Kafka
         from("direct:sendAlert")
             .routeId("SendAlertRoute")
             .marshal().json()
-            .to("kafka:" + KafkaConfig.ALERTS_TOPIC + "?brokers=localhost:9092")
+            .to("kafka:" + KafkaConfig.ALERTS_TOPIC + "?brokers=" + kafkaConfig.getKafkaBroker())
             .log("Sent alert: ${body}");
+
+        // Consume alerts from Kafka for API response
+        from("kafka:" + KafkaConfig.ALERTS_TOPIC + "?brokers=" + kafkaConfig.getKafkaBroker() + "&groupId=alert-consumer")
+            .routeId("AlertConsumerRoute")
+            .unmarshal().json(Alert.class)
+            .log("Consumed Alert: ${body}")
+            .process(exchange -> {
+                Alert alert = exchange.getIn().getBody(Alert.class);
+                alertService.addAlert(alert);
+            });
     }
 }
-

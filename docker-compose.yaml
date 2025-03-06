@@ -1,0 +1,102 @@
+services:
+  # Zookeeper (Kafka dependency)
+  zookeeper:
+    image: docker.io/confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - healthcare_network
+
+  # Kafka Broker
+  kafka:
+    image: docker.io/confluentinc/cp-kafka:latest
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
+    networks:
+      - healthcare_network
+
+  # Kafdrop - Kafka UI
+  kafdrop:
+    image: docker.io/obsidiandynamics/kafdrop:latest
+    container_name: kafdrop
+    restart: always
+    environment:
+      KAFKA_BROKER_CONNECT: kafka:9092
+    ports:
+      - "9000:9000"
+    depends_on:
+      - kafka
+    networks:
+      - healthcare_network
+
+  postgres:
+    image: registry.redhat.io/rhel9/postgresql-16:latest
+    container_name: postgres-db
+    restart: always
+    environment:
+      POSTGRESQL_USER: healthcareadmin           # Custom PostgreSQL username
+      POSTGRESQL_PASSWORD: healthcare123   # Custom password
+      POSTGRESQL_DATABASE: healthcare   # Custom database name
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/pgsql/data
+    networks:
+      - healthcare_network
+
+  pgadmin:
+    image: docker.io/dpage/pgadmin4
+    container_name: pgadmin
+    restart: always
+    ports:
+      - "8888:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: sampleuser@mysamples.com
+      PGADMIN_DEFAULT_PASSWORD: strong-password
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - healthcare_network
+
+  # Spring Boot Application
+  healthcare-app:
+    build: .
+    container_name: healthcare-app
+    ports:
+      - "9003:9002"
+    environment:
+      SPRING_JDBC_DRIVER: org.postgresql.Driver
+      SPRING_DATASOURCE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/healthcare
+      SPRING_DATASOURCE_USERNAME: healthcareadmin
+      SPRING_DATASOURCE_PASSWORD: healthcare123
+      SPRING_DDL_AUTO: update
+      # SPRING_SHOW_SQL: "true"
+      # SPRING_FORMAT_SQL: "true"
+      # H2_CONSOLE_ENABLED: "false"
+      # H2_CONSOLE_ALLOWOTHERS: "false"
+      USE_DB: true
+      KAFKA_URL: "kafka:9092"
+    depends_on:
+      - kafka
+    networks:
+      - healthcare_network
+
+networks:
+  healthcare_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  pgadmin_data:

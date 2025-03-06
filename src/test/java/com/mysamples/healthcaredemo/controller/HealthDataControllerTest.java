@@ -1,5 +1,5 @@
 package com.mysamples.healthcaredemo.controller;
 
-public @interface controller {
-
+public class HealthDataControllerTest {
+    
 }

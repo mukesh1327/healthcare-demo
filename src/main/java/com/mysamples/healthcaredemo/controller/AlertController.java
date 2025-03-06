@@ -1,11 +1,10 @@
 package com.mysamples.healthcaredemo.controller;
 
+import com.mysamples.healthcaredemo.domain.Alert;
+import com.mysamples.healthcaredemo.service.AlertService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.mysamples.healthcaredemo.domain.Alert;
-import com.mysamples.healthcaredemo.service.HealthDataService;
 
 import java.util.List;
 
@@ -13,11 +12,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AlertController {
 
-    private final HealthDataService healthDataService;
+    private final AlertService alertService;
 
-    // Get all generated alerts
     @GetMapping("/api/v1/alerts")
     public List<Alert> getAllAlerts() {
-        return healthDataService.getGeneratedAlerts();
+        return alertService.getAllGeneratedAlerts();
     }
 }
