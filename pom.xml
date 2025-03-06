@@ -126,7 +126,6 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
-				<finalName>healthcaredemo</finalName>
 					<excludes>
 						<exclude>
 							<groupId>org.projectlombok</groupId>

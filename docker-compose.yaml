@@ -71,7 +71,10 @@ services:
 
   # Spring Boot Application
   healthcare-app:
-    build: .
+    # build: .
+    build:
+      context: .
+      dockerfile: Dockerfile-test-case  # Using custom Dockerfile
     container_name: healthcare-app
     ports:
       - "9003:9002"

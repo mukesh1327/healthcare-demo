@@ -1,27 +1,28 @@
-// package com.mysamples.healthcaredemo.service;
+package com.mysamples.healthcaredemo.service;
 
-// import org.junit.jupiter.api.extension.ExtendWith;
-// import org.mockito.Mock;
-// import org.mockito.junit.jupiter.MockitoExtension;
-// import org.springframework.boot.test.context.SpringBootTest;
+import com.mysamples.healthcaredemo.domain.HealthData;
+import org.apache.camel.ProducerTemplate;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
-// @SpringBootTest
-// @ExtendWith(MockitoExtension.class)
-// public class AlertServiceTest {
+import static org.mockito.ArgumentMatchers.any;
 
-//     @Mock
-//     private AlertRepository alertRepository;
+public class AlertServiceTest {
 
-//     @InjectMocks
-//     private AlertService alertService;
+    private final ProducerTemplate producerTemplate = Mockito.mock(ProducerTemplate.class);
+    private final AlertService alertService = new AlertService(producerTemplate);
 
-//     @Test
-//     public void testCreateAlert() {
-//         Alert alert = new Alert(1L, "High CPU Usage", "CRITICAL");
-//         when(alertRepository.save(any(Alert.class))).thenReturn(alert);
+    @Test
+    public void testCheckThresholds() {
+        HealthData data = new HealthData();
+        data.setPatientId("P5367");
+        data.setHeartRate(123.54542314289287);
+        data.setOxygenLevel(87.81203202532186);
+        data.setTemperature(39.63438496148977);
 
-//         Alert savedAlert = alertService.createAlert(alert);
-//         assertNotNull(savedAlert);
-//         assertEquals("High CPU Usage", savedAlert.getMessage());
-//     }
-// }
+        alertService.checkThresholds(data);
+
+        // Verify that alerts were sent for all conditions
+        Mockito.verify(producerTemplate, Mockito.times(3)).sendBody(Mockito.anyString(), any());
+    }
+}
