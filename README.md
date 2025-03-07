@@ -17,12 +17,15 @@ mvn spring-boot:run
 
 Test in Postman
 
-http://localhost:8080/api/v1/health-data/send
+This URL is only used to produce some random dummy data and post it in DB to populate data
+POST: http://localhost:8080/api/v1/health-data/send
 
 
-http://localhost:8080/api/v1/health-data
+This URL will query the DB and get the data
+GET: http://localhost:8080/api/v1/health-data
 
 
+This will get the alerts through Kafka
 http://localhost:8080/api/v1/alerts
 
 

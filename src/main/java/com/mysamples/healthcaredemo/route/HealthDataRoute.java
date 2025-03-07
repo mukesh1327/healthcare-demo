@@ -8,6 +8,7 @@ import com.mysamples.healthcaredemo.config.KafkaConfig;
 import com.mysamples.healthcaredemo.domain.Alert;
 import com.mysamples.healthcaredemo.domain.HealthData;
 import com.mysamples.healthcaredemo.service.AlertService;
+import com.mysamples.healthcaredemo.service.AnalyticsService;
 import com.mysamples.healthcaredemo.service.HealthDataService;
 
 @Component
@@ -16,6 +17,7 @@ public class HealthDataRoute extends RouteBuilder {
     private final KafkaConfig kafkaConfig;
     private final AlertService alertService;
     private final HealthDataService healthDataService;
+    private final AnalyticsService analyticsService;
 
     @Override
     public void configure() {
@@ -33,6 +35,9 @@ public class HealthDataRoute extends RouteBuilder {
 
                 // Check thresholds & generate alerts
                 alertService.checkThresholds(data);
+
+                // Send data to analytics
+                analyticsService.processData(data);
             });
 
         // Produce alerts to Kafka
